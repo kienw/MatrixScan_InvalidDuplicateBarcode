@@ -92,11 +92,7 @@ class ScannerViewController: UIViewController {
         // The settings instance initially has all types of barcodes (symbologies) disabled. For the purpose of this
         // sample we enable a very generous set of symbologies. In your own app ensure that you only enable the
         // symbologies that your app requires as every additional enabled symbology has an impact on processing times.
-        settings.set(symbology: .ean13UPCA, enabled: true)
-        settings.set(symbology: .ean8, enabled: true)
-        settings.set(symbology: .upce, enabled: true)
-        settings.set(symbology: .code39, enabled: true)
-        settings.set(symbology: .code128, enabled: true)
+        settings.set(symbology: .qr, enabled: true)
 
         // Create new barcode tracking mode with the settings from above.
         barcodeTracking = BarcodeTracking(context: context, settings: settings)
