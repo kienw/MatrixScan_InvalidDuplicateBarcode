@@ -23,6 +23,7 @@ class ScannerViewController: UIViewController {
     private var overlay: BarcodeTrackingBasicOverlay!
 
     private var results: [String: Barcode] = [:]
+    private var duplicateBarcodeValues: [String] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -110,7 +111,8 @@ class ScannerViewController: UIViewController {
 
         // Add a barcode tracking overlay to the data capture view to render the tracked barcodes on top of the video
         // preview. This is optional, but recommended for better visual feedback.
-        overlay = BarcodeTrackingBasicOverlay(barcodeTracking: barcodeTracking, view: captureView, style: .frame)
+        overlay = BarcodeTrackingBasicOverlay(barcodeTracking: barcodeTracking, view: captureView)
+        overlay.delegate = self
     }
 }
 
@@ -122,11 +124,40 @@ extension ScannerViewController: BarcodeTrackingListener {
                          frameData: FrameData) {
         let barcodes = session.trackedBarcodes.values.compactMap { $0.barcode }
         DispatchQueue.main.async { [weak self] in
-            barcodes.forEach {
-                if let self = self, let data = $0.data, !data.isEmpty {
-                    self.results[data] = $0
+            if let self = self {
+                // Store the barcode values which have duplicates
+                self.duplicateBarcodeValues = barcodes.map { $0.data! }.duplicates()
+                barcodes.forEach {
+                    if let data = $0.data, !data.isEmpty {
+                        self.results[data] = $0
+                    }
                 }
             }
         }
+    }
+}
+
+extension ScannerViewController: BarcodeTrackingBasicOverlayDelegate {
+    func barcodeTrackingBasicOverlay(_ overlay: BarcodeTrackingBasicOverlay, didTap trackedBarcode: TrackedBarcode) { }
+
+    func barcodeTrackingBasicOverlay(_ overlay: BarcodeTrackingBasicOverlay,
+                                brushFor trackedBarcode: TrackedBarcode) -> Brush? {
+        // Return a custom Brush based on the tracked barcode.
+        
+        if duplicateBarcodeValues.contains(trackedBarcode.barcode.data!) {
+            print("detected duplicate barcode")
+            return Brush(fill: .gray, stroke: .black, strokeWidth: 1.0)
+        }
+        
+        return Brush(fill: .green, stroke: .black, strokeWidth: 1.0)
+    }
+}
+
+extension Array where Element: Hashable {
+    func duplicates() -> Array {
+        let groups = Dictionary(grouping: self, by: {$0})
+        let duplicateGroups = groups.filter {$1.count > 1}
+        let duplicates = Array(duplicateGroups.keys)
+        return duplicates
     }
 }
