@@ -122,14 +122,19 @@ extension ScannerViewController: BarcodeTrackingListener {
     func barcodeTracking(_ barcodeTracking: BarcodeTracking,
                          didUpdate session: BarcodeTrackingSession,
                          frameData: FrameData) {
-        let barcodes = session.trackedBarcodes.values.compactMap { $0.barcode }
+        let trackedBarcodes = Array(session.trackedBarcodes.values)
         DispatchQueue.main.async { [weak self] in
             if let self = self {
                 // Store the barcode values which have duplicates
-                self.duplicateBarcodeValues = barcodes.map { $0.data! }.duplicates()
-                barcodes.forEach {
-                    if let data = $0.data, !data.isEmpty {
-                        self.results[data] = $0
+                self.duplicateBarcodeValues = trackedBarcodes.map { $0.barcode.data! }.duplicates()
+                if self.duplicateBarcodeValues.count > 0 {
+                    for trackedBarcode in trackedBarcodes {
+                        print("identifier: \(trackedBarcode.identifier), data: \(trackedBarcode.barcode.data!), location (top-left): \(trackedBarcode.barcode.location.topLeft)")
+                    }
+                }
+                trackedBarcodes.forEach {
+                    if let data = $0.barcode.data, !data.isEmpty {
+                        self.results[data] = $0.barcode
                     }
                 }
             }
